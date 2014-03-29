@@ -6,13 +6,10 @@ require 'slim'
 
 Dotenv.load
 use Rack::Session::Cookie, :secret => 'BSXeXTMJKuHUNvq2dLG6'
-
 CALLBACK_URL = "http://localhost:4567/oauth/callback"
-
-Pocket.configure do |config|
+Pocket.configure do |config| 
   config.consumer_key = ENV['pocket_consumer_key']
 end
-
 DataMapper.finalize
 
 get '/reset' do
@@ -25,10 +22,7 @@ get "/" do
   puts "session: #{session}"
   
   if session[:access_token]
-    '
-<a href="/add?url=http://geknowm.com">Add Geknowm</a>
-<a href="/retrieve">Retrieve items</a>
-    '
+    redirect "/retrieve"
   else
     '<a href="/oauth/connect">Connect with Pocket</a>'
   end
