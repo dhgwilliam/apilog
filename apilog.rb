@@ -53,44 +53,55 @@ get '/add' do
   "<pre>#{info}</pre>"
 end
 
+get '/me' do
+  @sorted_stories = PocketStory.all.sort_by {|story| !story.time_added }
+  @bucket = @sorted_stories.inject({}) do |acc, story| 
+    date_bucket = story.time_added.strftime("%Y-%m-%d")
+    unless acc[date_bucket]
+      acc[date_bucket] = []
+    end
+    acc[date_bucket] << story
+    acc
+  end
+  @bucket_page = @bucket.take 10
+  slim :me
+end
+
+
 get "/retrieve" do
   client = Pocket.client(:access_token => session[:access_token])
   info = client.retrieve :detailType => :simple, :state => :all
-
-  # html = "<h1>#{user.username}'s recent photos</h1>"
-  # for media_item in client.user_recent_media
-  #   html << "<img src='#{media_item.images.thumbnail.url}'>"
-  # end
-  # html
-  # "<pre>#{info}</pre>"
-  info["list"].each do |item_id,item_hash|
-    PocketStory.new(:raw_id => item_id, :raw => item_hash)
-  end
-  "#{info.to_s}"
+  PocketStoryController :response => info
+  redirect "me"
 end
 
 get "/retrieve/since/:epoch" do
   client = Pocket.client(:access_token => session[:access_token])
   info = client.retrieve :detailType => :simple, :since => params[:epoch]
-  info["list"].each do |id, item|
-    begin
-    time_added = DateTime.strptime(item["time_added"], '%s')
-    time_read = if item["time_read"] != '0'
-                  DateTime.strptime(item["time_read"], '%s')
-                else
-                  nil
-                end
-    ps = PocketStory.create(
-      :pocket_id      => id.to_i,
-      :resolved_url   => item["resolved_url"],
-      :resolved_title => item["resolved_title"],
-      :time_added     => time_added,
-      :time_read      => time_read
-    )
-    pp ps.inspect
-    rescue => e
-      pp "Error: #{e}"
+  PocketStoryController :response => info
+  redirect "me"
+end
+
+helpers do
+  def PocketStoryController(args)
+    args[:response].each do |id, item|
+      begin
+        time_added = DateTime.strptime(item["time_added"], '%s')
+        time_read = if item["time_read"] != '0'
+            DateTime.strptime(item["time_read"], '%s')
+          else
+            nil
+          end
+        PocketStory.create(
+          :pocket_id      => id.to_i,
+          :resolved_url   => item["resolved_url"],
+          :resolved_title => item["resolved_title"],
+          :time_added     => time_added,
+          :time_read      => time_read
+        )
+      rescue => e
+        pp "Error: #{e}"
+      end
     end
   end
-  "#{info}"
 end

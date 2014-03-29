@@ -1,0 +1,10 @@
+html
+  head
+    title Me
+  body
+    ul
+      - @bucket_page.map do |k, v| 
+        li=k
+        ul
+          - v.each do |story|
+            li: a href=story.resolved_url =story.resolved_title
