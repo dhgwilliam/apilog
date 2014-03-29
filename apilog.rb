@@ -2,8 +2,9 @@ require "sinatra"
 require "pp"
 require "dotenv"
 require "./lib/apilog.rb"
-Dotenv.load
+require 'slim'
 
+Dotenv.load
 use Rack::Session::Cookie, :secret => 'BSXeXTMJKuHUNvq2dLG6'
 
 CALLBACK_URL = "http://localhost:4567/oauth/callback"
