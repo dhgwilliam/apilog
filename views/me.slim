@@ -7,4 +7,4 @@ html
         li=k
         ul
           - v.each do |story|
-            li: a href=story.resolved_url =story.resolved_title
+            li: a href=story.resolved_url ="#{story.resolved_title} (#{URI(story.resolved_url).host})"
