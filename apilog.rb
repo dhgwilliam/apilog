@@ -57,9 +57,7 @@ get '/me' do
   @sorted_stories = PocketStory.all.sort_by {|story| !story.time_added }
   @bucket = @sorted_stories.inject({}) do |acc, story| 
     date_bucket = story.time_added.strftime("%Y-%m-%d")
-    unless acc[date_bucket]
-      acc[date_bucket] = []
-    end
+    acc[date_bucket] = [] unless acc[date_bucket]
     acc[date_bucket] << story
     acc
   end
@@ -68,23 +66,34 @@ get '/me' do
 end
 
 
-get "/retrieve" do
+get "/retrieve/pocket" do
   client = Pocket.client(:access_token => session[:access_token])
   info = client.retrieve :detailType => :simple, :state => :all
   PocketStoryController :response => info
   redirect "me"
 end
 
-get "/retrieve/since/:epoch" do
+get '/retrieve/twitter' do
+  TWITTER_CLIENT.user('dhgwilliam')
+end
+
+get "/retrieve/pocket/since/:date" do
+  epoch = DateTime.parse(params[:date]).strftime('%s')
   client = Pocket.client(:access_token => session[:access_token])
-  info = client.retrieve :detailType => :simple, :since => params[:epoch]
+  info = client.retrieve :detailType => :simple, :since => epoch
   PocketStoryController :response => info
   redirect "me"
 end
 
 helpers do
   def PocketStoryController(args)
-    args[:response].each do |id, item|
+    if args[:response]["list"]
+      list = args[:response]["list"]
+    else
+      list = args[:response]
+    end
+
+    list.each do |id, item|
       begin
         time_added = DateTime.strptime(item["time_added"], '%s')
         time_read = if item["time_read"] != '0'
@@ -92,12 +101,14 @@ helpers do
           else
             nil
           end
-        PocketStory.create(
-          :pocket_id      => id.to_i,
-          :resolved_url   => item["resolved_url"],
-          :resolved_title => item["resolved_title"],
-          :time_added     => time_added,
-          :time_read      => time_read
+        PocketStory.first_or_create({
+            :pocket_id      => id.to_i},
+          {
+            :resolved_url   => item["resolved_url"],
+            :resolved_title => item["resolved_title"],
+            :time_added     => time_added,
+            :time_read      => time_read
+          }
         )
       rescue => e
         pp "Error: #{e}"
