@@ -1,16 +1,4 @@
-require "sinatra"
-require "pp"
-require "dotenv"
-require "./lib/apilog.rb"
-require 'slim'
-
-Dotenv.load
-use Rack::Session::Cookie, :secret => 'BSXeXTMJKuHUNvq2dLG6'
-CALLBACK_URL = "http://localhost:4567/oauth/callback"
-Pocket.configure do |config| 
-  config.consumer_key = ENV['pocket_consumer_key']
-end
-DataMapper.finalize
+require 'sinatra'
 
 get '/reset' do
   puts "GET /reset"
@@ -47,14 +35,8 @@ get "/oauth/callback" do
   redirect "/"
 end
 
-get '/add' do
-  client = Pocket.client(:access_token => session[:access_token])
-  info = client.add :url => 'http://geknowm.com'
-  "<pre>#{info}</pre>"
-end
-
 get '/me' do
-  @sorted_stories = PocketStory.all.sort_by {|story| !story.time_added }
+  @sorted_stories = PocketStory.order_by(:time_added => :desc)
   @bucket = @sorted_stories.inject({}) do |acc, story| 
     date_bucket = story.time_added.strftime("%Y-%m-%d")
     acc[date_bucket] = [] unless acc[date_bucket]
@@ -78,7 +60,7 @@ get '/retrieve/twitter' do
 end
 
 get "/retrieve/pocket/since/:date" do
-  epoch = DateTime.parse(params[:date]).strftime('%s')
+  epoch = Time.parse(params[:date]).strftime('%s')
   client = Pocket.client(:access_token => session[:access_token])
   info = client.retrieve :detailType => :simple, :since => epoch
   PocketStoryController :response => info
@@ -95,23 +77,22 @@ helpers do
 
     list.each do |id, item|
       begin
-        time_added = DateTime.strptime(item["time_added"], '%s')
+        time_added = Time.strptime(item["time_added"], '%s')
         time_read = if item["time_read"] != '0'
-            DateTime.strptime(item["time_read"], '%s')
+            Time.strptime(item["time_read"], '%s')
           else
             nil
           end
-        PocketStory.first_or_create({
-            :pocket_id      => id.to_i},
-          {
-            :resolved_url   => item["resolved_url"],
-            :resolved_title => item["resolved_title"],
-            :time_added     => time_added,
-            :time_read      => time_read
-          }
-        )
-      rescue => e
-        pp "Error: #{e}"
+        PocketStory.create({
+          :pocket_id  => id.to_i,
+          :url        => item["resolved_url"],
+          :title      => item["resolved_title"],
+          :time_added => time_added,
+          :time_read  => time_read
+        })
+        pp "successfully stored #{id}"
+      rescue Exception => e
+        pp "Error: #{id} #{e}"
       end
     end
   end
