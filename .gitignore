@@ -2,3 +2,4 @@
 .env
 *.swp
 *.rdb
+rethinkdb_data

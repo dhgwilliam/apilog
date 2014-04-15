@@ -1,13 +1,13 @@
 source "https://rubygems.org"
 
-gem 'dm-core'
-gem 'dm-redis-adapter'
 gem 'dotenv'
 gem 'slim'
 gem 'sinatra'
 gem 'pocket-ruby'
+gem 'nobrainer'
 
 group :development do
   gem 'shotgun'
   gem 'thin'
+  gem 'pry'
 end

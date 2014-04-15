@@ -1,10 +1,5 @@
-require 'dm-core'
-require 'dm-redis-adapter'
-
-DataMapper.setup(:default, {:adapter  => "redis"})
+require 'nobrainer'
 
 class Story
-  include DataMapper::Resource
-
-  property :id, Serial
+  include NoBrainer::Document
 end
