@@ -1,5 +1,7 @@
 require 'sinatra'
 
+CALLBACK_URL = "http://localhost:4567/oauth/callback"
+
 get '/reset' do
   puts "GET /reset"
   session.clear
@@ -36,14 +38,8 @@ get "/oauth/callback" do
 end
 
 get '/me' do
-  @sorted_stories = PocketStory.order_by(:time_added => :desc)
-  @bucket = @sorted_stories.inject({}) do |acc, story| 
-    date_bucket = story.time_added.strftime("%Y-%m-%d")
-    acc[date_bucket] = [] unless acc[date_bucket]
-    acc[date_bucket] << story
-    acc
-  end
-  @bucket_page = @bucket.take 10
+  days = params[:days] || 10
+  @bucket_page = PocketStory.take(days.to_i)
   slim :me
 end
 
