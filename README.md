@@ -1,3 +1,10 @@
+# installing
+
+* `bundle install`
+* `bundle check`
+* `bundle exec shotgun -Ilib -p 4567`
+* `rethinkdb`
+
 # intro
 
 This is an idea that's been fermenting for a while, I think this will probably look familiar to a lot of people.
