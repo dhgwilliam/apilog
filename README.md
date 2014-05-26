@@ -1,9 +1,10 @@
+![](http://cl.ly/image/2Q170x3h1n39/Screen%20Shot%202014-05-26%20at%2012.01.52%20AM.png)
+
 # installing
 
 * `bundle install`
 * `bundle check`
-* `bundle exec shotgun -Ilib -p 4567`
-* `rethinkdb`
+* `bundle exec rake shotgun`
 
 # intro
 
