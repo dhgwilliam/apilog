@@ -5,7 +5,16 @@ task :redis do
   exec 'redis-cli'
 end
 
+desc 'start rethinkdb'
+task :rethink do
+  system <<-BASH
+  if ps ax | grep -q [r]ethink ; then
+    rethinkdb &> tmp/rethinkdb.log &
+  fi
+  BASH
+end
+
 desc 'start webserver with shotgun'
-task :shotgun do
-  exec 'shotgun -s thin apilog.rb -p 4567'
+task :shotgun => [ :rethink ] do
+  exec 'bundle exec shotgun -Ilib -p 4567 -o 0.0.0.0'
 end

@@ -10,4 +10,5 @@ group :development do
   gem 'shotgun'
   gem 'thin'
   gem 'pry'
+  gem 'rake'
 end
