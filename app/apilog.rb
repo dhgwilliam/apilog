@@ -1,4 +1,5 @@
 require 'sinatra'
+require 'date'
 
 CALLBACK_URL = "http://localhost:4567/oauth/callback"
 
@@ -11,8 +12,9 @@ get "/" do
   puts "GET /"
   puts "session: #{session}"
   
+  last_week = (Date.today - 7).strftime('%Y-%m-%d')
   if session[:access_token]
-    redirect "/retrieve"
+    redirect "/retrieve/pocket/since/#{last_week}"
   else
     '<a href="/oauth/connect">Connect with Pocket</a>'
   end
