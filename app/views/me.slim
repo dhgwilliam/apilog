@@ -2,8 +2,11 @@ html
   head
     title Me
   body
+    - @next_date = (@last_day - @days * 60*60*24).strftime('%Y-%m-%d')
+    a href="/me?date=#{@next_date}" next
+    br: hr
     ul
-      - @bucket_page.map do |k, v| 
+      - @stories.map do |k, v| 
         li=k
         ul
           - v.each do |story|

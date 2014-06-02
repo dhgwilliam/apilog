@@ -40,8 +40,17 @@ get "/oauth/callback" do
 end
 
 get '/me' do
-  days = params[:days] || 10
-  @bucket_page = PocketStory.take(days.to_i)
+  @days = if params[:days]
+           params[:days].to_i
+         else
+           10
+         end
+  @last_day = if params[:date] 
+               Time.parse(params[:date])
+             else
+               Time.now
+             end
+  @stories = PocketStory.take(@days, :date => @last_day)
   slim :me
 end
 
@@ -57,15 +66,23 @@ get '/retrieve/twitter' do
   TWITTER_CLIENT.user('dhgwilliam')
 end
 
-get "/retrieve/pocket/since/:date" do
-  epoch = Time.parse(params[:date]).strftime('%s')
-  client = Pocket.client(:access_token => session[:access_token])
-  info = client.retrieve :detailType => :simple, :since => epoch
-  PocketStoryController :response => info
+get "/retrieve/pocket/since/:date" do |date|
+  get_stories_since :date => date
   redirect "me"
 end
 
 helpers do
+  def pocket_time(date)
+    Time.parse(date).strftime('%s')
+  end
+
+  def get_stories_since(args)
+    date = args[:date]
+    client = Pocket.client(:access_token => session[:access_token])
+    info = client.retrieve :detailType => :simple, :since => pocket_time(date)
+    PocketStoryController :response => info
+  end
+
   def PocketStoryController(args)
     if args[:response]["list"]
       list = args[:response]["list"]

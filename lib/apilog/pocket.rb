@@ -17,8 +17,9 @@ class PocketStory < Story
   field :time_read, 
     :type     => Time
 
-  def self.take(int)
-    sorted_stories = self.order_by(:time_added => :desc)
+  def self.take(int, args)
+    sorted_stories = self.order_by(:time_added => :desc).
+      where(:time_added.lte => args[:date])
     bucket = sorted_stories.inject({}) do |acc, story| 
       date_bucket = story.time_added.strftime("%Y-%m-%d")
       acc[date_bucket] = [] unless acc[date_bucket]
