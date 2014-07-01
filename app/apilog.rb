@@ -1,7 +1,44 @@
 require 'sinatra'
 require 'date'
+require 'chronic'
+require 'statsample'
+require 'google_visualr'
 
 CALLBACK_URL = "http://localhost:4567/oauth/callback"
+
+get '/fitbit' do
+  if session[:fitbit_token] and session[:fitbit_secret]
+    fitbit = Fitgem::Client.new(
+      :consumer_key => ENV['fitbit_consumer_key'],
+      :consumer_secret => ENV['fitbit_consumer_secret'],
+      :token => session[:fitbit_token],
+      :secret => session[:fitbit_secret]
+    )
+    @series = fitbit.data_by_time_range('/activities/log/steps', {
+      :base_date => Chronic.parse('today'),
+      :period => '30d'
+    })
+    data_table = GoogleVisualr::DataTable.new
+    data_table.new_columns(
+      [ { :type => 'datetime', :label => 'Date'},
+        { :type => 'number', :label => 'Steps'} ] )
+    data = @series['activities-log-steps'].map{|day| [ Chronic.parse(day['dateTime']), day['value'].to_i]}
+    data_table.add_rows(data)
+    @chart = GoogleVisualr::Interactive::LineChart.new(data_table)
+    slim :fitbit
+  else
+    redirect('/auth/fitbit')
+  end
+end
+
+get '/auth/:name/callback' do |name|
+  token_name = "#{name}_token"
+  secret_name = "#{name}_secret"
+  session[token_name.to_s] = request.env['omniauth.auth']['credentials']['token']
+  session[secret_name.to_s] = request.env['omniauth.auth']['credentials']['secret']
+  redirect('/fitbit')
+end
+
 
 get '/reset' do
   puts "GET /reset"
@@ -12,7 +49,7 @@ get "/" do
   puts "GET /"
   puts "session: #{session}"
   
-  last_week = (Date.today - 7).strftime('%Y-%m-%d')
+  last_week = Chronic.parse('last week')
   if session[:access_token]
     redirect "/retrieve/pocket/since/#{last_week}"
   else
