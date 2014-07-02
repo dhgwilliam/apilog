@@ -9,20 +9,31 @@ CALLBACK_URL = "http://localhost:4567/oauth/callback"
 get '/fitbit' do
   if session[:fitbit_token] and session[:fitbit_secret]
     fitbit = Fitgem::Client.new(
-      :consumer_key => ENV['fitbit_consumer_key'],
+      :consumer_key    => ENV['fitbit_consumer_key'],
       :consumer_secret => ENV['fitbit_consumer_secret'],
-      :token => session[:fitbit_token],
-      :secret => session[:fitbit_secret]
-    )
-    @series = fitbit.data_by_time_range('/activities/log/steps', {
-      :base_date => Chronic.parse('today'),
-      :period => '30d'
-    })
+      :token           => session[:fitbit_token],
+      :secret          => session[:fitbit_secret] )
+    series = fitbit.data_by_time_range(
+      '/activities/log/steps', 
+      { :base_date => Chronic.parse('today'),
+        :period    => '3m' } )
     data_table = GoogleVisualr::DataTable.new
     data_table.new_columns(
       [ { :type => 'datetime', :label => 'Date'},
-        { :type => 'number', :label => 'Steps'} ] )
-    data = @series['activities-log-steps'].map{|day| [ Chronic.parse(day['dateTime']), day['value'].to_i]}
+        { :type => 'number',   :label => 'Steps'},
+        { :type => 'number',   :label => '7-day median'} ] )
+    steps = series['activities-log-steps']
+    acc = []
+    rolling_median = steps.map{|day|
+      a = acc.push(day['value'].to_i)
+      median = a.count >= 7 ? a.sort.to_scale.median : nil
+      acc.shift if acc.count >= 7
+      median }
+    data = steps.map{|day| 
+      [ Chronic.parse(day['dateTime']), 
+        day['value'].to_i, 
+        rolling_median.shift 
+      ] }
     data_table.add_rows(data)
     @chart = GoogleVisualr::Interactive::LineChart.new(data_table)
     slim :fitbit
@@ -32,10 +43,11 @@ get '/fitbit' do
 end
 
 get '/auth/:name/callback' do |name|
-  token_name = "#{name}_token"
-  secret_name = "#{name}_secret"
-  session[token_name.to_s] = request.env['omniauth.auth']['credentials']['token']
-  session[secret_name.to_s] = request.env['omniauth.auth']['credentials']['secret']
+  token_name, secret_name  = "#{name}_token", "#{name}_secret"
+  session[token_name.to_s] = 
+    request.env['omniauth.auth']['credentials']['token']
+  session[secret_name.to_s] = 
+    request.env['omniauth.auth']['credentials']['secret']
   redirect('/fitbit')
 end
 
@@ -77,16 +89,8 @@ get "/oauth/callback" do
 end
 
 get '/me' do
-  @days = if params[:days]
-           params[:days].to_i
-         else
-           10
-         end
-  @last_day = if params[:date] 
-               Time.parse(params[:date])
-             else
-               Time.now
-             end
+  @days = params[:days] ? params[:days].to_i : 10
+  @last_day = params[:date] ? Time.parse(params[:date]) : Time.now
   @stories = PocketStory.take(@days, :date => @last_day)
   slim :me
 end
