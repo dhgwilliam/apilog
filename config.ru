@@ -16,7 +16,7 @@ Dotenv.load
 
 use Rack::Session::Cookie, :secret => 'BSXeXTMJKuHUNvq2dLG6'
 use OmniAuth::Builder do
-    provider :fitbit, 'a973ef5421794ee39a48965e9925aaa4', '75441ab7391741708b3c385bfad14ef9'
+    provider :fitbit, ENV['fitbit_consumer_key'], ENV['fitbit_consumer_secret']
 end
 
 Pocket.configure do |config| 
