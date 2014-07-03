@@ -21,18 +21,16 @@ get '/fitbit' do
     data_table.new_columns(
       [ { :type => 'datetime', :label => 'Date'},
         { :type => 'number',   :label => 'Steps'},
-        { :type => 'number',   :label => '7-day median'} ] )
+        { :type => 'number',   :label => '7-day median'},
+        { :type => 'number',   :label => '3-day mean'} ] )
     steps = series['activities-log-steps']
-    acc = []
-    rolling_median = steps.map{|day|
-      a = acc.push(day['value'].to_i)
-      median = a.count >= 7 ? a.sort.to_scale.median : nil
-      acc.shift if acc.count >= 7
-      median }
+    rolling_median = rolling_func(steps, 7) {|a| a.to_scale.median }
+    rolling_mean = rolling_func(steps, 3) {|a| a.to_scale.mean }
     data = steps.map{|day| 
       [ Chronic.parse(day['dateTime']), 
         day['value'].to_i, 
-        rolling_median.shift 
+        rolling_median.shift,
+        rolling_mean.shift
       ] }
     data_table.add_rows(data)
     @chart = GoogleVisualr::Interactive::LineChart.new(data_table)
@@ -113,6 +111,14 @@ get "/retrieve/pocket/since/:date" do |date|
 end
 
 helpers do
+  def rolling_func(series, days)
+    acc = []
+    series.map{|day|
+      a = acc.push(day['value'].to_i)
+      m = a.count >= days ? yield(a.sort) : nil
+      acc.shift if acc.count >= days
+      m }
+  end
   def pocket_time(date)
     Time.parse(date).strftime('%s')
   end
