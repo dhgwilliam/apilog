@@ -10,6 +10,7 @@ gem 'omniauth-fitbit'
 gem 'chronic'
 gem 'statsample'
 gem "google_visualr", ">= 2.1"
+gem 'tilt', '~> 1.4.1'
 
 group :development do
   gem 'shotgun'
