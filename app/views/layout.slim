@@ -1,0 +1,30 @@
+html
+  head
+    title Fitbit Stats
+    script src='https://www.google.com/jsapi'
+    meta name="viewport" content="width=device-width, initial-scale=1.0"
+    link rel="stylesheet" href="css/normalize.css"
+    link rel="stylesheet" href="css/foundation.css"
+    script src="js/vendor/modernizr.js"
+  body
+    nav class="top-bar"
+      ul class="title-area"
+        li class="name"
+          h1: a href="#" apilog
+        li class="toggle-topbar menu-icon"
+          a href="/"
+            span Menu
+
+      section class="top-bar-section"
+        ul class="left"
+          li: a href="/me" me
+          li: a href="/fitbit" fitbit charts
+
+    div class="row"
+      div class="small-10 small-centered columns"
+        == yield
+    script src="js/vendor/jquery.js"
+    script src="js/foundation.min.js"
+    script src="js/foundation/foundation.topbar.js"
+    javascript:
+      $(document).foundation();

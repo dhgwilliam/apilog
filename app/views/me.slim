@@ -1,13 +1,9 @@
-html
-  head
-    title Me
-  body
-    - @next_date = (@last_day - @days * 60*60*24).strftime('%Y-%m-%d')
-    a href="/me?date=#{@next_date}" next
-    br: hr
+- @next_date = (@last_day - @days * 60*60*24).strftime('%Y-%m-%d')
+ul
+  - @stories.map do |k, v| 
+    li=k
     ul
-      - @stories.map do |k, v| 
-        li=k
-        ul
-          - v.each do |story|
-            li: a href=story.url ="#{story.title} (#{URI(story.url).host})"
+      - v.each do |story|
+        li: a href=story.url ="#{story.title} (#{URI(story.url).host})"
+hr
+a class="button expand" href="/me?date=#{@next_date}" next
