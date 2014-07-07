@@ -1,9 +1,20 @@
 desc 'start rethinkdb'
 task :rethink do
   system <<-BASH
-  if ps ax | grep -q [r]ethink ; then
-    rethinkdb &> tmp/rethinkdb.log &
-  fi
+  safe_start_rethink() {
+    if ps ax | grep -q [r]ethink ; then
+      rethinkdb &> tmp/rethinkdb.log &
+    fi
+  }
+
+  ps_rethink() {
+    ps ax \
+      | grep rethink \
+      | grep -Ev "(grep|rake)"
+  }
+
+  safe_start_rethink
+  ps_rethink
   BASH
 end
 
